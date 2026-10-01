@@ -1059,14 +1059,14 @@
         // ==========================================
         // CLOUDFLARE FETCH LOGIC
         // ==========================================
-        fetchBtn.addEventListener('click', async () => {
-            const url = teraInput.value.trim().toLowerCase();
+                fetchBtn.addEventListener('click', async () => {
+            // FIX: Asli URL ko chhedna nahi hai, bas check karne ke liye ek lowercase copy banani hai
+            const originalUrl = teraInput.value.trim();
+            const checkUrl = originalUrl.toLowerCase();
             
-            // TeraBox ke sabhi known domains ki list
             const validDomains = ['terabox', 'terasharefile', '1024tera', '4funbox', 'mirrobox', 'nephobox', 'momerybox', 'terafileshare'];
             
-            // Check karega ki URL mein inme se koi bhi naam hai ya nahi
-            const isValid = validDomains.some(domain => url.includes(domain));
+            const isValid = validDomains.some(domain => checkUrl.includes(domain));
 
             if (!isValid) {
                 errorMessage.style.display = 'block';
@@ -1085,7 +1085,8 @@
 
             try {
                 const backendServer = "https://late-credit-7efc.vifonain.workers.dev"; 
-                const response = await fetch(`${backendServer}/api/fetch?url=${encodeURIComponent(url)}`);
+                // FIX: Yahan originalUrl bhej rahe hain jisme Capital letters safe rahenge
+                const response = await fetch(`${backendServer}/api/fetch?url=${encodeURIComponent(originalUrl)}`);
                 const data = await response.json();
 
                 if (data.success && data.urls) {
