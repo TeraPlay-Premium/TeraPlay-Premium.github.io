@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="manifest" href="site.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
     <title>TeraPlay Video Player</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -358,7 +358,6 @@
             border-radius: 4px;
             position: relative;
             width: 0%;
-            /* Smooth playback progress bar without micro-delays */
         }
 
         .progress-container:hover .progress-bar {
@@ -488,7 +487,6 @@
             gap: 6px;
         }
 
-        /* New Volume Slider (Clickable Toggle Logic) */
         .volume-slider {
             -webkit-appearance: none;
             appearance: none;
@@ -876,6 +874,7 @@
 
         let videoQualities = {};
         let currentQuality = '';
+        let hls; // HLS player ke liye global variable
 
         // ==========================================
         // SPINNER LOGIC (Loading icon and Center Btn hiding)
@@ -923,22 +922,14 @@
         function startMainVideo(videoData) {
             isAdRunning = false;
             playerWrapper.classList.remove('empty-state');
-            
             adBadge.style.display = 'none';
-            
             videoTitle.textContent = videoData.title || "Terabox Video Playing";
             
-            videoQualities = {};
-            const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
-            
-            const availableQualities = Object.keys(videoData.urls).sort().reverse();
-            
-            for (const q of availableQualities) {
-                videoQualities[q] = `${backendServer}/stream?videoUrl=${encodeURIComponent(videoData.urls[q])}`;
-            }
-            
+            videoQualities = videoData.urls;
+            const availableQualities = Object.keys(videoQualities).sort().reverse();
             currentQuality = availableQualities[0] || 'Default'; 
-            video.src = videoQualities[currentQuality];
+            
+            loadVideoStream(videoQualities[currentQuality]);
             
             renderQualityOptions();
             isVideoLoaded = true;
@@ -946,8 +937,51 @@
             progressContainer.style.pointerEvents = 'auto';
             document.querySelector('.controls-row').style.pointerEvents = 'auto';
             document.querySelector('.controls-row').style.opacity = '1';
+        }
+
+        // HLS aur Direct MP4 dono ko handle karne ka function
+        function loadVideoStream(streamUrl) {
+            const isPaused = video.paused;
+            const cTime = video.currentTime;
+
+            // Agar link HLS (.m3u8) hai
+            if (streamUrl.includes('.m3u8') || streamUrl.includes('fast_stream')) {
+                if (Hls.isSupported()) {
+                    if (hls) hls.destroy();
+                    hls = new Hls();
+                    hls.loadSource(streamUrl);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        if (cTime > 0) video.currentTime = cTime;
+                        if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Safari/iOS ke liye native support
+                    video.src = streamUrl;
+                    if (cTime > 0) video.currentTime = cTime;
+                    if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
+                }
+            } else {
+                // Agar normal MP4/MKV link hai
+                if (hls) hls.destroy();
+                const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
+                // Agar API pehle se worker link de rahi hai toh direct chalayein, warna proxy karein
+                video.src = streamUrl.includes('workers.dev') ? streamUrl : `${backendServer}/stream?videoUrl=${encodeURIComponent(streamUrl)}`;
+                
+                if (cTime > 0) video.currentTime = cTime;
+                if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
+            }
+        }
+
+        function changeQuality(newQuality) {
+            if (newQuality === currentQuality) return;
+            currentQuality = newQuality;
+            qualityBtn.textContent = newQuality;
             
-            video.play().catch(e => console.log(e));
+            loadVideoStream(videoQualities[newQuality]);
+            
+            renderQualityOptions(); 
+            qualityMenu.classList.remove('open');
         }
 
         // ==========================================
@@ -969,7 +1003,6 @@
                 return;
             }
 
-            // 👈 FIX: Quality button will be visible again
             qualityBtn.style.display = 'block'; 
             qualityBtn.style.pointerEvents = 'auto'; 
             qualities.forEach(q => {
@@ -980,21 +1013,6 @@
                 qualityMenu.appendChild(btn);
             });
             qualityBtn.textContent = currentQuality;
-        }
-
-        function changeQuality(newQuality) {
-            if (newQuality === currentQuality) return;
-            const cTime = video.currentTime;
-            const isPaused = video.paused;
-            
-            currentQuality = newQuality;
-            qualityBtn.textContent = newQuality;
-            video.src = videoQualities[newQuality];
-            video.currentTime = cTime; 
-            
-            if (!isPaused) video.play(); 
-            renderQualityOptions(); 
-            qualityMenu.classList.remove('open');
         }
 
         // ==========================================
@@ -1018,7 +1036,7 @@
                         playerWrapper.classList.remove('empty-state');
                         videoQualities = { 'Default': data.url };
                         currentQuality = 'Default';
-                        video.src = data.url; 
+                        loadVideoStream(data.url);
                         renderQualityOptions(); 
                         videoTitle.textContent = "Playing Video ID: " + videoId;
                         isVideoLoaded = true;
@@ -1041,7 +1059,7 @@
         // ==========================================
         // CLOUDFLARE FETCH LOGIC
         // ==========================================
-                fetchBtn.addEventListener('click', async () => {
+        fetchBtn.addEventListener('click', async () => {
             const url = teraInput.value.trim().toLowerCase();
             
             // TeraBox ke sabhi known domains ki list
@@ -1093,10 +1111,8 @@
             playerWrapper.classList.add('show-controls');
             clearTimeout(hideControlsTimer);
             
-            // NEW: Checking if any menu is open
             const isMenuOpen = speedMenu.classList.contains('open') || qualityMenu.classList.contains('open');
 
-            // If video is playing and menus are CLOSED, then only the auto-hide timer will run
             if (!video.paused && !isSeeking && !isVolumeDragging && !isMenuOpen) {
                 hideControlsTimer = setTimeout(() => {
                     playerWrapper.classList.remove('show-controls');
@@ -1107,7 +1123,6 @@
                 }, 3000); 
             }
         }
-
 
         function formatTime(seconds) {
             if (isNaN(seconds)) return '0:00';
@@ -1187,16 +1202,12 @@
                 const x = e.clientX - rect.left;
                 
                 if (x < rect.width * 0.40) {
-                    // Left 40% area (Rewind)
                     video.currentTime = Math.max(0, video.currentTime - 5);
                     showSkipBadge('left');
                 } else if (x > rect.width * 0.60) {
-                    // Right 40% area (Forward)
                     video.currentTime = Math.min(video.duration, video.currentTime + 5);
                     showSkipBadge('right');
                 } else {
-                    // Center 20% area (No skip)
-                    // Double tapping here will toggle play/pause
                     togglePlay(); 
                 }
 
@@ -1299,11 +1310,9 @@
             timeTooltip.style.left = `${e.clientX - rect.left}px`;
         });
 
-        // 👇 NEW VOLUME BUTTON LOGIC (CLICK TO TOGGLE)
         volumeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isShowing = volumeSlider.classList.toggle('show');
-            // Do not hide duration in fullscreen mode
             if (isShowing && !document.fullscreenElement) {
                 timeDisplay.classList.add('hide-time');
             } else {
@@ -1364,7 +1373,7 @@
         document.addEventListener('fullscreenchange', () => {
             if (document.fullscreenElement) {
                 fullscreenIcon.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />';
-                timeDisplay.classList.remove('hide-time'); // Time display returns upon entering fullscreen
+                timeDisplay.classList.remove('hide-time');
             } else {
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
@@ -1380,14 +1389,14 @@
             e.stopPropagation();
             qualityMenu.classList.remove('open'); 
             speedMenu.classList.toggle('open');
-            showControls(); // NEW: Holds the timer on click
+            showControls();
         });
 
         qualityBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             speedMenu.classList.remove('open'); 
             qualityMenu.classList.toggle('open');
-            showControls(); // NEW: Holds the timer on click
+            showControls();
         });
 
 
@@ -1404,7 +1413,6 @@
             });
         });
 
-        // Hide menus and volume slider on outside click
         document.addEventListener('click', (e) => {
             let menuClosed = false;
 
@@ -1422,7 +1430,6 @@
                 menuClosed = true;
             }
 
-            // If any menu was closed, restart the timer
             if (menuClosed) {
                 showControls();
             }
