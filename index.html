@@ -949,9 +949,9 @@
         // ==========================================
         // HLS & DIRECT VIDEO STREAM LOADER
         // ==========================================
-        function loadVideoStream(streamUrl) {
+                function loadVideoStream(streamUrl, keepTime = false) {
             const isPaused = video.paused;
-            const cTime = video.currentTime;
+            const cTime = keepTime ? video.currentTime : 0;
 
             if (streamUrl.includes('.m3u8') || streamUrl.includes('fast_stream')) {
                 if (typeof Hls !== 'undefined' && Hls.isSupported()) {
@@ -961,7 +961,7 @@
                     hls.attachMedia(video);
                     
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        if (cTime > 0) video.currentTime = cTime;
+                        if (keepTime && cTime > 0) video.currentTime = cTime;
                         if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
                     });
                     
@@ -977,16 +977,17 @@
                     });
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                     video.src = streamUrl;
-                    if (cTime > 0) video.currentTime = cTime;
+                    if (keepTime && cTime > 0) video.currentTime = cTime;
                     if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
                 }
             } else {
                 if (hls) hls.destroy();
                 video.src = streamUrl;
-                if (cTime > 0) video.currentTime = cTime;
+                if (keepTime && cTime > 0) video.currentTime = cTime;
                 if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
             }
         }
+
 
         // ==========================================
         // SMART QUALITY RENDER LOGIC
@@ -1019,20 +1020,18 @@
             qualityBtn.textContent = currentQuality;
         }
 
-        function changeQuality(newQuality) {
+                function changeQuality(newQuality) {
             if (newQuality === currentQuality) return;
-            const cTime = video.currentTime;
-            const isPaused = video.paused;
-            
             currentQuality = newQuality;
             qualityBtn.textContent = newQuality;
             
-            // FIX: Use loader function for quality changes too
-            loadVideoStream(videoQualities[newQuality]);
+            // Yahan 'true' pass kar rahe hain taaki quality change par video skip na ho
+            loadVideoStream(videoQualities[newQuality], true);
             
             renderQualityOptions(); 
             qualityMenu.classList.remove('open');
         }
+
 
         // ==========================================
         // INITIAL LOAD LOGIC
