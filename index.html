@@ -894,7 +894,14 @@
             adBadge.style.display = 'none';
             videoTitle.textContent = videoData.title || "Terabox Video Playing";
             
-            videoQualities = videoData.urls;
+            const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
+            videoQualities = {};
+            
+            // 🔥 FIX: Saari qualities ko HLS Proxy me bhej rahe hain CORS bachane ke liye
+            for (const q in videoData.urls) {
+                videoQualities[q] = `${backendServer}/stream?videoUrl=${encodeURIComponent(videoData.urls[q])}`;
+            }
+            
             const availableQualities = Object.keys(videoQualities).sort().reverse();
             currentQuality = availableQualities[0] || 'Default'; 
             
@@ -912,15 +919,29 @@
             const isPaused = video.paused;
             const cTime = video.currentTime;
 
+            // Proxy ke baad bhi original url me 'm3u8' string hoti hai, isliye string check
             if (streamUrl.includes('.m3u8') || streamUrl.includes('fast_stream')) {
-                if (Hls.isSupported()) {
+                if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                     if (hls) hls.destroy();
                     hls = new Hls();
                     hls.loadSource(streamUrl);
                     hls.attachMedia(video);
+                    
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
                         if (cTime > 0) video.currentTime = cTime;
                         if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
+                    });
+                    
+                    // Added proper HLS Error reporting
+                    hls.on(Hls.Events.ERROR, (event, data) => {
+                        if (data.fatal) {
+                            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                                hls.startLoad();
+                            } else {
+                                errorMessage.style.display = 'block';
+                                errorMessage.textContent = 'HLS Stream Error: ' + data.details;
+                            }
+                        }
                     });
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                     video.src = streamUrl;
@@ -929,9 +950,7 @@
                 }
             } else {
                 if (hls) hls.destroy();
-                const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
-                video.src = streamUrl.includes('workers.dev') ? streamUrl : `${backendServer}/stream?videoUrl=${encodeURIComponent(streamUrl)}`;
-                
+                video.src = streamUrl;
                 if (cTime > 0) video.currentTime = cTime;
                 if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
             }
@@ -1039,6 +1058,7 @@
 
             try {
                 const backendServer = "https://late-credit-7efc.vifonain.workers.dev"; 
+                // Using Original URL keeping Cases Intact
                 const response = await fetch(`${backendServer}/api/fetch?url=${encodeURIComponent(originalUrl)}`);
                 const data = await response.json();
 
@@ -1120,7 +1140,7 @@
         video.addEventListener('error', () => {
             if(video.src && !isAdRunning) {
                 errorMessage.style.display = 'block';
-                errorMessage.textContent = 'Error: Failed to load video.';
+                errorMessage.textContent = 'Error: Failed to load video format.';
                 isVideoLoaded = false;
                 playerWrapper.classList.remove('buffering');
             }
