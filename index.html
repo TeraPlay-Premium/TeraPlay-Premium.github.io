@@ -6,7 +6,7 @@
     <title>Minimal Video Player</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        @impospeedBtn.rt url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
         * {
             margin: 0;
@@ -352,7 +352,7 @@
             border-radius: 4px;
             position: relative;
             width: 0%;
-            /* Progress bar ab bina micro-delay ke YouTube ki tarah smooth chalegi */
+            /* Smooth playback progress bar without micro-delays */
         }
 
         .progress-container:hover .progress-bar {
@@ -482,7 +482,7 @@
             gap: 6px;
         }
 
-        /* Naya Volume Slider (Clickable Toggle Logic) */
+        /* New Volume Slider (Clickable Toggle Logic) */
         .volume-slider {
             -webkit-appearance: none;
             appearance: none;
@@ -963,7 +963,8 @@
                 return;
             }
 
-            qualityBtn.style.display = 'block'; // 👈 FIX: Quality button wapas show karega
+            // 👈 FIX: Quality button will be visible again
+            qualityBtn.style.display = 'block'; 
             qualityBtn.style.pointerEvents = 'auto'; 
             qualities.forEach(q => {
                 const btn = document.createElement('button');
@@ -1075,14 +1076,14 @@
         // ==========================================
         // UI & CONTROLS LOGIC
         // ==========================================
-                function showControls() {
+        function showControls() {
             playerWrapper.classList.add('show-controls');
             clearTimeout(hideControlsTimer);
             
-            // NAYA: Check kar rahe hain ki koi menu khula toh nahi hai
+            // NEW: Checking if any menu is open
             const isMenuOpen = speedMenu.classList.contains('open') || qualityMenu.classList.contains('open');
 
-            // Agar video chal rahi hai aur menu BUND hai, tabhi auto-hide timer chalega
+            // If video is playing and menus are CLOSED, then only the auto-hide timer will run
             if (!video.paused && !isSeeking && !isVolumeDragging && !isMenuOpen) {
                 hideControlsTimer = setTimeout(() => {
                     playerWrapper.classList.remove('show-controls');
@@ -1107,7 +1108,7 @@
             if (video.paused) {
                 video.play().catch(e => {
                     errorMessage.style.display = 'block';
-                    errorMessage.textContent = 'Playback error: Shayad broken link hai.';
+                    errorMessage.textContent = 'Playback error: The link might be broken.';
                 });
             } else {
                 video.pause();
@@ -1140,7 +1141,7 @@
         video.addEventListener('error', () => {
             if(video.src && !isAdRunning) {
                 errorMessage.style.display = 'block';
-                errorMessage.textContent = 'Error: Video load nahi ho paayi.';
+                errorMessage.textContent = 'Error: Failed to load video.';
                 isVideoLoaded = false;
                 playerWrapper.classList.remove('buffering');
             }
@@ -1172,7 +1173,7 @@
                 const rect = playerWrapper.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 
-                                if (x < rect.width * 0.40) {
+                if (x < rect.width * 0.40) {
                     // Left 40% area (Rewind)
                     video.currentTime = Math.max(0, video.currentTime - 5);
                     showSkipBadge('left');
@@ -1182,7 +1183,7 @@
                     showSkipBadge('right');
                 } else {
                     // Center 20% area (No skip)
-                    // Yahan double tap karne par video play/pause hogi
+                    // Double tapping here will toggle play/pause
                     togglePlay(); 
                 }
 
@@ -1285,11 +1286,11 @@
             timeTooltip.style.left = `${e.clientX - rect.left}px`;
         });
 
-        // 👇 NAYA VOLUME BUTTON LOGIC (CLICK TO TOGGLE)
+        // 👇 NEW VOLUME BUTTON LOGIC (CLICK TO TOGGLE)
         volumeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isShowing = volumeSlider.classList.toggle('show');
-            // Fullscreen me duration hide nahi karni
+            // Do not hide duration in fullscreen mode
             if (isShowing && !document.fullscreenElement) {
                 timeDisplay.classList.add('hide-time');
             } else {
@@ -1350,7 +1351,7 @@
         document.addEventListener('fullscreenchange', () => {
             if (document.fullscreenElement) {
                 fullscreenIcon.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />';
-                timeDisplay.classList.remove('hide-time'); // Fullscreen hote hi time wapas aayega
+                timeDisplay.classList.remove('hide-time'); // Time display returns upon entering fullscreen
             } else {
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
@@ -1362,18 +1363,18 @@
             }
         });
 
-                speedBtn.addEventListener('click', (e) => {
+        speedBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             qualityMenu.classList.remove('open'); 
             speedMenu.classList.toggle('open');
-            showControls(); // NAYA: Click hote hi timer ko hold karega
+            showControls(); // NEW: Holds the timer on click
         });
 
         qualityBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             speedMenu.classList.remove('open'); 
             qualityMenu.classList.toggle('open');
-            showControls(); // NAYA: Click hote hi timer ko hold karega
+            showControls(); // NEW: Holds the timer on click
         });
 
 
@@ -1390,7 +1391,7 @@
             });
         });
 
-                // Bahar click karne par menus aur volume slider hide karna
+        // Hide menus and volume slider on outside click
         document.addEventListener('click', (e) => {
             let menuClosed = false;
 
@@ -1408,7 +1409,7 @@
                 menuClosed = true;
             }
 
-            // Agar koi menu band hua hai, toh wapas timer start kardo
+            // If any menu was closed, restart the timer
             if (menuClosed) {
                 showControls();
             }
