@@ -1040,9 +1040,16 @@
         // ==========================================
         // CLOUDFLARE FETCH LOGIC
         // ==========================================
-        fetchBtn.addEventListener('click', async () => {
-            const url = teraInput.value.trim();
-            if (!url.includes('terabox')) {
+                fetchBtn.addEventListener('click', async () => {
+            const url = teraInput.value.trim().toLowerCase();
+            
+            // TeraBox ke sabhi known domains ki list
+            const validDomains = ['terabox', 'terasharefile', '1024tera', '4funbox', 'mirrobox', 'nephobox', 'momerybox', 'terafileshare'];
+            
+            // Check karega ki URL mein inme se koi bhi naam hai ya nahi
+            const isValid = validDomains.some(domain => url.includes(domain));
+
+            if (!isValid) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'Please enter a valid Terabox link.';
                 return;
