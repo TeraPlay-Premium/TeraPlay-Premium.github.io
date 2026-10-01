@@ -3,12 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="manifest" href="site.webmanifest">
-    <title>TeraPlay Video Player</title>
+    <title>Minimal Video Player</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
@@ -44,6 +39,9 @@
             user-select: auto;
         }
 
+        /* ========================================= */
+        /* Premium Hero Section */
+        /* ========================================= */
         .hero-section {
             text-align: center;
             margin-bottom: 40px;
@@ -78,6 +76,7 @@
             .hero-section { margin-bottom: 30px; }
         }
 
+        /* Input Container */
         .input-container {
             width: 100%;
             max-width: 900px;
@@ -138,6 +137,7 @@
             }
         }
         
+        /* Error Message Display */
         #errorMessage {
             width: 100%;
             max-width: 900px;
@@ -153,6 +153,9 @@
             word-wrap: break-word;
         }
 
+        /* ========================================= */
+        /* Player Wrapper */
+        /* ========================================= */
         .player-wrapper {
             position: relative;
             width: 100%;
@@ -181,6 +184,7 @@
             cursor: pointer;
         }
 
+        /* Spinner */
         .loader-spinner {
             position: absolute;
             top: 50%;
@@ -218,6 +222,7 @@
             display: none !important;
         }
 
+        /* Title */
         .video-title {
             position: absolute;
             top: 0;
@@ -242,6 +247,7 @@
             opacity: 1;
         }
 
+        /* Ad Badge & Timer */
         .ad-badge {
             position: absolute;
             top: 16px;
@@ -266,6 +272,7 @@
             display: flex;
         }
 
+        /* Blurred Center Play/Pause Button */
         .center-btn {
             position: absolute;
             top: 50%;
@@ -300,6 +307,7 @@
             fill: #fff;
         }
 
+        /* Controls Container */
         .controls {
             position: absolute;
             bottom: 0;
@@ -323,6 +331,7 @@
             pointer-events: none !important;
         }
 
+        /* Progress Bar */
         .progress-container {
             width: 100%;
             height: 4px;
@@ -344,6 +353,7 @@
             border-radius: 4px;
             position: relative;
             width: 0%;
+            /* Smooth playback progress bar without micro-delays */
         }
 
         .progress-container:hover .progress-bar {
@@ -379,6 +389,7 @@
             pointer-events: none;
         }
 
+        /* Tooltip */
         .time-tooltip {
             position: absolute;
             top: -32px;
@@ -398,6 +409,7 @@
             opacity: 1;
         }
 
+        /* Controls Row */
         .controls-row {
             display: flex;
             align-items: center;
@@ -412,6 +424,7 @@
             gap: 10px;
         }
 
+        /* Buttons */
         .ctrl-btn {
             background: none;
             border: none;
@@ -439,6 +452,7 @@
             height: 22px;
         }
 
+        /* Time Display */
         .time-display {
             color: rgba(255, 255, 255, 0.7);
             font-size: 13px;
@@ -469,6 +483,7 @@
             gap: 6px;
         }
 
+        /* New Volume Slider (Clickable Toggle Logic) */
         .volume-slider {
             -webkit-appearance: none;
             appearance: none;
@@ -505,6 +520,7 @@
             margin-top: -5.5px; 
         }
 
+        /* 5s Skip Badges */
         .skip-badge {
             position: absolute;
             top: 50%;
@@ -527,9 +543,11 @@
         .skip-badge.right { right: 15%; transform: translateY(-50%) scale(0.8); }
         .skip-badge.show { opacity: 1; transform: translateY(-50%) scale(1); }
 
+        /* Fullscreen styles */
         .player-wrapper:fullscreen { border-radius: 0; max-width: 100%; aspect-ratio: auto; }
         .player-wrapper:-webkit-full-screen { border-radius: 0; max-width: 100%; aspect-ratio: auto; }
 
+        /* Speed & Quality Menus */
         .popup-menu {
             position: absolute;
             bottom: 60px;
@@ -583,6 +601,9 @@
 
         .player-wrapper { animation: fadeUp 0.6s ease forwards; }
 
+        /* ========================================= */
+        /* Play Store Google Ad Banner CSS           */
+        /* ========================================= */
         .app-ad-banner {
             display: none; 
             width: 100%;
@@ -784,6 +805,7 @@
         </div>
     </div>
 
+    <!-- Play Store Banner -->
     <a href="https://play.google.com/store/apps/details?id=com.rayole.solve.earn2&referrer=z37EYW" target="_blank" class="app-ad-banner" id="appAdBanner">
         <div class="app-icon">
             <img src="https://raw.githubusercontent.com/techlinkspro/techlinkspro.github.io/refs/heads/main/V8AVKTiEhrtiZ2Pqb7g11EgwjBA.png" alt="App Logo">
@@ -849,8 +871,11 @@
 
         let videoQualities = {};
         let currentQuality = '';
-        let hls; 
+        let hls; // Added for HLS player
 
+        // ==========================================
+        // SPINNER LOGIC (Loading icon and Center Btn hiding)
+        // ==========================================
         video.addEventListener('waiting', () => playerWrapper.classList.add('buffering'));
         video.addEventListener('playing', () => playerWrapper.classList.remove('buffering'));
         video.addEventListener('canplay', () => playerWrapper.classList.remove('buffering'));
@@ -858,6 +883,9 @@
             if(!isVideoLoaded) playerWrapper.classList.add('buffering');
         });
 
+        // ==========================================
+        // ADVERTISEMENT LOGIC
+        // ==========================================
         let adPlayed = false;
         let isAdRunning = false;
         let pendingVideoData = null; 
@@ -891,20 +919,23 @@
         function startMainVideo(videoData) {
             isAdRunning = false;
             playerWrapper.classList.remove('empty-state');
+            
             adBadge.style.display = 'none';
+            
             videoTitle.textContent = videoData.title || "Terabox Video Playing";
             
-            const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
             videoQualities = {};
+            const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
             
-            // 🔥 FIX: Saari qualities ko HLS Proxy me bhej rahe hain CORS bachane ke liye
-            for (const q in videoData.urls) {
+            const availableQualities = Object.keys(videoData.urls).sort().reverse();
+            
+            for (const q of availableQualities) {
                 videoQualities[q] = `${backendServer}/stream?videoUrl=${encodeURIComponent(videoData.urls[q])}`;
             }
             
-            const availableQualities = Object.keys(videoQualities).sort().reverse();
             currentQuality = availableQualities[0] || 'Default'; 
             
+            // FIX: Using our new HLS Video Loader
             loadVideoStream(videoQualities[currentQuality]);
             
             renderQualityOptions();
@@ -915,11 +946,13 @@
             document.querySelector('.controls-row').style.opacity = '1';
         }
 
+        // ==========================================
+        // HLS & DIRECT VIDEO STREAM LOADER
+        // ==========================================
         function loadVideoStream(streamUrl) {
             const isPaused = video.paused;
             const cTime = video.currentTime;
 
-            // Proxy ke baad bhi original url me 'm3u8' string hoti hai, isliye string check
             if (streamUrl.includes('.m3u8') || streamUrl.includes('fast_stream')) {
                 if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                     if (hls) hls.destroy();
@@ -932,7 +965,6 @@
                         if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
                     });
                     
-                    // Added proper HLS Error reporting
                     hls.on(Hls.Events.ERROR, (event, data) => {
                         if (data.fatal) {
                             if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
@@ -956,17 +988,9 @@
             }
         }
 
-        function changeQuality(newQuality) {
-            if (newQuality === currentQuality) return;
-            currentQuality = newQuality;
-            qualityBtn.textContent = newQuality;
-            
-            loadVideoStream(videoQualities[newQuality]);
-            
-            renderQualityOptions(); 
-            qualityMenu.classList.remove('open');
-        }
-
+        // ==========================================
+        // SMART QUALITY RENDER LOGIC
+        // ==========================================
         function renderQualityOptions() {
             qualityMenu.innerHTML = ''; 
             const qualities = Object.keys(videoQualities);
@@ -995,6 +1019,24 @@
             qualityBtn.textContent = currentQuality;
         }
 
+        function changeQuality(newQuality) {
+            if (newQuality === currentQuality) return;
+            const cTime = video.currentTime;
+            const isPaused = video.paused;
+            
+            currentQuality = newQuality;
+            qualityBtn.textContent = newQuality;
+            
+            // FIX: Use loader function for quality changes too
+            loadVideoStream(videoQualities[newQuality]);
+            
+            renderQualityOptions(); 
+            qualityMenu.classList.remove('open');
+        }
+
+        // ==========================================
+        // INITIAL LOAD LOGIC
+        // ==========================================
         async function loadVideoFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             const videoId = urlParams.get('v'); 
@@ -1013,7 +1055,10 @@
                         playerWrapper.classList.remove('empty-state');
                         videoQualities = { 'Default': data.url };
                         currentQuality = 'Default';
+                        
+                        // FIX: Added loader
                         loadVideoStream(data.url);
+                        
                         renderQualityOptions(); 
                         videoTitle.textContent = "Playing Video ID: " + videoId;
                         isVideoLoaded = true;
@@ -1033,15 +1078,15 @@
 
         loadVideoFromURL();
         
+        // ==========================================
+        // CLOUDFLARE FETCH LOGIC
+        // ==========================================
         fetchBtn.addEventListener('click', async () => {
             const originalUrl = teraInput.value.trim();
             const checkUrl = originalUrl.toLowerCase();
             
-            const validDomains = ['terabox', 'terasharefile', '1024tera', '4funbox', 'mirrobox', 'nephobox', 'momerybox', 'terafileshare'];
-            
-            const isValid = validDomains.some(domain => checkUrl.includes(domain));
-
-            if (!isValid) {
+            // FIX: Capital letters safe rkhte huye bas valid check karenge
+            if (!checkUrl.includes('terabox') && !checkUrl.includes('terasharefile') && !checkUrl.includes('1024tera') && !checkUrl.includes('4funbox') && !checkUrl.includes('mirrobox') && !checkUrl.includes('nephobox') && !checkUrl.includes('momerybox') && !checkUrl.includes('terafileshare')) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'Please enter a valid Terabox link.';
                 return;
@@ -1058,7 +1103,7 @@
 
             try {
                 const backendServer = "https://late-credit-7efc.vifonain.workers.dev"; 
-                // Using Original URL keeping Cases Intact
+                // FIX: Pass ORIGINAL string taaki Xapiverse error na de
                 const response = await fetch(`${backendServer}/api/fetch?url=${encodeURIComponent(originalUrl)}`);
                 const data = await response.json();
 
@@ -1078,12 +1123,17 @@
             }
         });
 
+        // ==========================================
+        // UI & CONTROLS LOGIC
+        // ==========================================
         function showControls() {
             playerWrapper.classList.add('show-controls');
             clearTimeout(hideControlsTimer);
             
+            // NEW: Checking if any menu is open
             const isMenuOpen = speedMenu.classList.contains('open') || qualityMenu.classList.contains('open');
 
+            // If video is playing and menus are CLOSED, then only the auto-hide timer will run
             if (!video.paused && !isSeeking && !isVolumeDragging && !isMenuOpen) {
                 hideControlsTimer = setTimeout(() => {
                     playerWrapper.classList.remove('show-controls');
@@ -1094,6 +1144,7 @@
                 }, 3000); 
             }
         }
+
 
         function formatTime(seconds) {
             if (isNaN(seconds)) return '0:00';
@@ -1140,7 +1191,7 @@
         video.addEventListener('error', () => {
             if(video.src && !isAdRunning) {
                 errorMessage.style.display = 'block';
-                errorMessage.textContent = 'Error: Failed to load video format.';
+                errorMessage.textContent = 'Error: Failed to load video.';
                 isVideoLoaded = false;
                 playerWrapper.classList.remove('buffering');
             }
@@ -1173,12 +1224,16 @@
                 const x = e.clientX - rect.left;
                 
                 if (x < rect.width * 0.40) {
+                    // Left 40% area (Rewind)
                     video.currentTime = Math.max(0, video.currentTime - 5);
                     showSkipBadge('left');
                 } else if (x > rect.width * 0.60) {
+                    // Right 40% area (Forward)
                     video.currentTime = Math.min(video.duration, video.currentTime + 5);
                     showSkipBadge('right');
                 } else {
+                    // Center 20% area (No skip)
+                    // Double tapping here will toggle play/pause
                     togglePlay(); 
                 }
 
@@ -1281,9 +1336,11 @@
             timeTooltip.style.left = `${e.clientX - rect.left}px`;
         });
 
+        // 👇 NEW VOLUME BUTTON LOGIC (CLICK TO TOGGLE)
         volumeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isShowing = volumeSlider.classList.toggle('show');
+            // Do not hide duration in fullscreen mode
             if (isShowing && !document.fullscreenElement) {
                 timeDisplay.classList.add('hide-time');
             } else {
@@ -1344,7 +1401,7 @@
         document.addEventListener('fullscreenchange', () => {
             if (document.fullscreenElement) {
                 fullscreenIcon.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />';
-                timeDisplay.classList.remove('hide-time'); 
+                timeDisplay.classList.remove('hide-time'); // Time display returns upon entering fullscreen
             } else {
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
@@ -1360,15 +1417,16 @@
             e.stopPropagation();
             qualityMenu.classList.remove('open'); 
             speedMenu.classList.toggle('open');
-            showControls(); 
+            showControls(); // NEW: Holds the timer on click
         });
 
         qualityBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             speedMenu.classList.remove('open'); 
             qualityMenu.classList.toggle('open');
-            showControls(); 
+            showControls(); // NEW: Holds the timer on click
         });
+
 
         document.querySelectorAll('.speed-option').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1383,6 +1441,7 @@
             });
         });
 
+        // Hide menus and volume slider on outside click
         document.addEventListener('click', (e) => {
             let menuClosed = false;
 
@@ -1400,10 +1459,12 @@
                 menuClosed = true;
             }
 
+            // If any menu was closed, restart the timer
             if (menuClosed) {
                 showControls();
             }
         });
+
 
         document.addEventListener('keydown', (e) => {
             if (!isVideoLoaded || isAdRunning) return;
