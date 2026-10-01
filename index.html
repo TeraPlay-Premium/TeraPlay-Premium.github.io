@@ -3,16 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="manifest" href="site.webmanifest">
-    <title>TeraPlay Video Player</title>
+    <title>Minimal Video Player</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        @impospeedBtn.rt url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
         * {
             margin: 0;
@@ -358,6 +352,7 @@
             border-radius: 4px;
             position: relative;
             width: 0%;
+            /* Progress bar ab bina micro-delay ke YouTube ki tarah smooth chalegi */
         }
 
         .progress-container:hover .progress-bar {
@@ -487,6 +482,7 @@
             gap: 6px;
         }
 
+        /* Naya Volume Slider (Clickable Toggle Logic) */
         .volume-slider {
             -webkit-appearance: none;
             appearance: none;
@@ -809,7 +805,7 @@
     </div>
 
     <!-- Play Store Banner -->
-    <a href="https://play.google.com/store/apps/details?id=com.rayole.solve.earn2&referrer=dvUZRu" target="_blank" class="app-ad-banner" id="appAdBanner">
+    <a href="https://play.google.com/store/apps/details?id=com.rayole.solve.earn2&referrer=z37EYW" target="_blank" class="app-ad-banner" id="appAdBanner">
         <div class="app-icon">
             <img src="https://raw.githubusercontent.com/techlinkspro/techlinkspro.github.io/refs/heads/main/V8AVKTiEhrtiZ2Pqb7g11EgwjBA.png" alt="App Logo">
         </div>
@@ -874,7 +870,6 @@
 
         let videoQualities = {};
         let currentQuality = '';
-        let hls; // HLS player ke liye global variable
 
         // ==========================================
         // SPINNER LOGIC (Loading icon and Center Btn hiding)
@@ -922,14 +917,22 @@
         function startMainVideo(videoData) {
             isAdRunning = false;
             playerWrapper.classList.remove('empty-state');
+            
             adBadge.style.display = 'none';
+            
             videoTitle.textContent = videoData.title || "Terabox Video Playing";
             
-            videoQualities = videoData.urls;
-            const availableQualities = Object.keys(videoQualities).sort().reverse();
-            currentQuality = availableQualities[0] || 'Default'; 
+            videoQualities = {};
+            const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
             
-            loadVideoStream(videoQualities[currentQuality]);
+            const availableQualities = Object.keys(videoData.urls).sort().reverse();
+            
+            for (const q of availableQualities) {
+                videoQualities[q] = `${backendServer}/stream?videoUrl=${encodeURIComponent(videoData.urls[q])}`;
+            }
+            
+            currentQuality = availableQualities[0] || 'Default'; 
+            video.src = videoQualities[currentQuality];
             
             renderQualityOptions();
             isVideoLoaded = true;
@@ -937,51 +940,8 @@
             progressContainer.style.pointerEvents = 'auto';
             document.querySelector('.controls-row').style.pointerEvents = 'auto';
             document.querySelector('.controls-row').style.opacity = '1';
-        }
-
-        // HLS aur Direct MP4 dono ko handle karne ka function
-        function loadVideoStream(streamUrl) {
-            const isPaused = video.paused;
-            const cTime = video.currentTime;
-
-            // Agar link HLS (.m3u8) hai
-            if (streamUrl.includes('.m3u8') || streamUrl.includes('fast_stream')) {
-                if (Hls.isSupported()) {
-                    if (hls) hls.destroy();
-                    hls = new Hls();
-                    hls.loadSource(streamUrl);
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        if (cTime > 0) video.currentTime = cTime;
-                        if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
-                    });
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    // Safari/iOS ke liye native support
-                    video.src = streamUrl;
-                    if (cTime > 0) video.currentTime = cTime;
-                    if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
-                }
-            } else {
-                // Agar normal MP4/MKV link hai
-                if (hls) hls.destroy();
-                const backendServer = "https://late-credit-7efc.vifonain.workers.dev";
-                // Agar API pehle se worker link de rahi hai toh direct chalayein, warna proxy karein
-                video.src = streamUrl.includes('workers.dev') ? streamUrl : `${backendServer}/stream?videoUrl=${encodeURIComponent(streamUrl)}`;
-                
-                if (cTime > 0) video.currentTime = cTime;
-                if (!isPaused || cTime === 0) video.play().catch(e => console.log(e));
-            }
-        }
-
-        function changeQuality(newQuality) {
-            if (newQuality === currentQuality) return;
-            currentQuality = newQuality;
-            qualityBtn.textContent = newQuality;
             
-            loadVideoStream(videoQualities[newQuality]);
-            
-            renderQualityOptions(); 
-            qualityMenu.classList.remove('open');
+            video.play().catch(e => console.log(e));
         }
 
         // ==========================================
@@ -1003,7 +963,7 @@
                 return;
             }
 
-            qualityBtn.style.display = 'block'; 
+            qualityBtn.style.display = 'block'; // 👈 FIX: Quality button wapas show karega
             qualityBtn.style.pointerEvents = 'auto'; 
             qualities.forEach(q => {
                 const btn = document.createElement('button');
@@ -1013,6 +973,21 @@
                 qualityMenu.appendChild(btn);
             });
             qualityBtn.textContent = currentQuality;
+        }
+
+        function changeQuality(newQuality) {
+            if (newQuality === currentQuality) return;
+            const cTime = video.currentTime;
+            const isPaused = video.paused;
+            
+            currentQuality = newQuality;
+            qualityBtn.textContent = newQuality;
+            video.src = videoQualities[newQuality];
+            video.currentTime = cTime; 
+            
+            if (!isPaused) video.play(); 
+            renderQualityOptions(); 
+            qualityMenu.classList.remove('open');
         }
 
         // ==========================================
@@ -1036,7 +1011,7 @@
                         playerWrapper.classList.remove('empty-state');
                         videoQualities = { 'Default': data.url };
                         currentQuality = 'Default';
-                        loadVideoStream(data.url);
+                        video.src = data.url; 
                         renderQualityOptions(); 
                         videoTitle.textContent = "Playing Video ID: " + videoId;
                         isVideoLoaded = true;
@@ -1059,16 +1034,9 @@
         // ==========================================
         // CLOUDFLARE FETCH LOGIC
         // ==========================================
-                fetchBtn.addEventListener('click', async () => {
-            // FIX: Asli URL ko chhedna nahi hai, bas check karne ke liye ek lowercase copy banani hai
-            const originalUrl = teraInput.value.trim();
-            const checkUrl = originalUrl.toLowerCase();
-            
-            const validDomains = ['terabox', 'terasharefile', '1024tera', '4funbox', 'mirrobox', 'nephobox', 'momerybox', 'terafileshare'];
-            
-            const isValid = validDomains.some(domain => checkUrl.includes(domain));
-
-            if (!isValid) {
+        fetchBtn.addEventListener('click', async () => {
+            const url = teraInput.value.trim();
+            if (!url.includes('terabox')) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'Please enter a valid Terabox link.';
                 return;
@@ -1085,8 +1053,7 @@
 
             try {
                 const backendServer = "https://late-credit-7efc.vifonain.workers.dev"; 
-                // FIX: Yahan originalUrl bhej rahe hain jisme Capital letters safe rahenge
-                const response = await fetch(`${backendServer}/api/fetch?url=${encodeURIComponent(originalUrl)}`);
+                const response = await fetch(`${backendServer}/api/fetch?url=${encodeURIComponent(url)}`);
                 const data = await response.json();
 
                 if (data.success && data.urls) {
@@ -1108,12 +1075,14 @@
         // ==========================================
         // UI & CONTROLS LOGIC
         // ==========================================
-        function showControls() {
+                function showControls() {
             playerWrapper.classList.add('show-controls');
             clearTimeout(hideControlsTimer);
             
+            // NAYA: Check kar rahe hain ki koi menu khula toh nahi hai
             const isMenuOpen = speedMenu.classList.contains('open') || qualityMenu.classList.contains('open');
 
+            // Agar video chal rahi hai aur menu BUND hai, tabhi auto-hide timer chalega
             if (!video.paused && !isSeeking && !isVolumeDragging && !isMenuOpen) {
                 hideControlsTimer = setTimeout(() => {
                     playerWrapper.classList.remove('show-controls');
@@ -1124,6 +1093,7 @@
                 }, 3000); 
             }
         }
+
 
         function formatTime(seconds) {
             if (isNaN(seconds)) return '0:00';
@@ -1137,7 +1107,7 @@
             if (video.paused) {
                 video.play().catch(e => {
                     errorMessage.style.display = 'block';
-                    errorMessage.textContent = 'Playback error: The link might be broken.';
+                    errorMessage.textContent = 'Playback error: Shayad broken link hai.';
                 });
             } else {
                 video.pause();
@@ -1170,7 +1140,7 @@
         video.addEventListener('error', () => {
             if(video.src && !isAdRunning) {
                 errorMessage.style.display = 'block';
-                errorMessage.textContent = 'Error: Failed to load video.';
+                errorMessage.textContent = 'Error: Video load nahi ho paayi.';
                 isVideoLoaded = false;
                 playerWrapper.classList.remove('buffering');
             }
@@ -1202,13 +1172,17 @@
                 const rect = playerWrapper.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 
-                if (x < rect.width * 0.40) {
+                                if (x < rect.width * 0.40) {
+                    // Left 40% area (Rewind)
                     video.currentTime = Math.max(0, video.currentTime - 5);
                     showSkipBadge('left');
                 } else if (x > rect.width * 0.60) {
+                    // Right 40% area (Forward)
                     video.currentTime = Math.min(video.duration, video.currentTime + 5);
                     showSkipBadge('right');
                 } else {
+                    // Center 20% area (No skip)
+                    // Yahan double tap karne par video play/pause hogi
                     togglePlay(); 
                 }
 
@@ -1311,9 +1285,11 @@
             timeTooltip.style.left = `${e.clientX - rect.left}px`;
         });
 
+        // 👇 NAYA VOLUME BUTTON LOGIC (CLICK TO TOGGLE)
         volumeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isShowing = volumeSlider.classList.toggle('show');
+            // Fullscreen me duration hide nahi karni
             if (isShowing && !document.fullscreenElement) {
                 timeDisplay.classList.add('hide-time');
             } else {
@@ -1374,7 +1350,7 @@
         document.addEventListener('fullscreenchange', () => {
             if (document.fullscreenElement) {
                 fullscreenIcon.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />';
-                timeDisplay.classList.remove('hide-time');
+                timeDisplay.classList.remove('hide-time'); // Fullscreen hote hi time wapas aayega
             } else {
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
@@ -1386,18 +1362,18 @@
             }
         });
 
-        speedBtn.addEventListener('click', (e) => {
+                speedBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             qualityMenu.classList.remove('open'); 
             speedMenu.classList.toggle('open');
-            showControls();
+            showControls(); // NAYA: Click hote hi timer ko hold karega
         });
 
         qualityBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             speedMenu.classList.remove('open'); 
             qualityMenu.classList.toggle('open');
-            showControls();
+            showControls(); // NAYA: Click hote hi timer ko hold karega
         });
 
 
@@ -1414,6 +1390,7 @@
             });
         });
 
+                // Bahar click karne par menus aur volume slider hide karna
         document.addEventListener('click', (e) => {
             let menuClosed = false;
 
@@ -1431,6 +1408,7 @@
                 menuClosed = true;
             }
 
+            // Agar koi menu band hua hai, toh wapas timer start kardo
             if (menuClosed) {
                 showControls();
             }
