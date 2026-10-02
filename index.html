@@ -1075,8 +1075,8 @@
         }
 
 
-        // ==========================================
-        // INITIAL LOAD LOGIC
+               // ==========================================
+        // INITIAL LOAD LOGIC (AUTO-PLAY SHARED LINKS)
         // ==========================================
         async function loadVideoFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1086,31 +1086,13 @@
             qualityBtn.style.display = 'none'; 
 
             if (videoId) {
-                try {
-                    videoTitle.textContent = "Loading from Server...";
-                    const backendServer = "https://late-credit-7efc.vifonain.workers.dev"; 
-                    const response = await fetch(`${backendServer}/api/video/${videoId}`);
-                    const data = await response.json();
-
-                    if (data.success) {
-                        playerWrapper.classList.remove('empty-state');
-                        videoQualities = { 'Default': data.url };
-                        currentQuality = 'Default';
-                        
-                        // FIX: Added loader
-                        loadVideoStream(data.url);
-                        
-                        renderQualityOptions(); 
-                        videoTitle.textContent = "Playing Video ID: " + videoId;
-                        isVideoLoaded = true;
-                    } else {
-                        throw new Error(data.error);
-                    }
-                } catch (error) {
-                    errorMessage.style.display = 'block';
-                    errorMessage.textContent = 'Error: ' + error.message;
-                    videoTitle.textContent = "Error Loading Video";
-                }
+                // Input box mein original link jaisa format bana kar set kar do
+                teraInput.value = "https://1024terabox.com/s/" + videoId;
+                
+                // Auto-play trigger karein
+                setTimeout(() => {
+                    fetchBtn.click();
+                }, 500);
             } else {
                 errorMessage.style.display = 'none';
                 videoTitle.textContent = "Ready to Play";
@@ -1118,19 +1100,27 @@
         }
 
         loadVideoFromURL();
+
         
         // ==========================================
         // CLOUDFLARE FETCH LOGIC
         // ==========================================
-        fetchBtn.addEventListener('click', async () => {
+                fetchBtn.addEventListener('click', async () => {
             const originalUrl = teraInput.value.trim();
             const checkUrl = originalUrl.toLowerCase();
             
-            // FIX: Capital letters safe rkhte huye bas valid check karenge
             if (!checkUrl.includes('terabox') && !checkUrl.includes('terasharefile') && !checkUrl.includes('1024tera') && !checkUrl.includes('4funbox') && !checkUrl.includes('mirrobox') && !checkUrl.includes('nephobox') && !checkUrl.includes('momerybox') && !checkUrl.includes('terafileshare')) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'Please enter a valid Terabox link.';
                 return;
+            }
+
+            // 🔥 NAYA CODE: Play dabte hi Browser URL update karne ke liye
+            if (originalUrl.includes('/s/')) {
+                // Link se "/s/" ke aage wali ID nikalna
+                const videoId = originalUrl.split('/s/')[1].split('/')[0].split('?')[0];
+                // URL bar ko naye link se update karna (bina page reload kiye)
+                window.history.pushState(null, '', '?v=' + videoId);
             }
 
             fetchBtn.disabled = true;
@@ -1144,7 +1134,6 @@
 
             try {
                 const backendServer = "https://late-credit-7efc.vifonain.workers.dev"; 
-                // FIX: Pass ORIGINAL string taaki Xapiverse error na de
                 const response = await fetch(`${backendServer}/api/fetch?url=${encodeURIComponent(originalUrl)}`);
                 const data = await response.json();
 
@@ -1163,6 +1152,7 @@
                 fetchBtn.textContent = 'Play';
             }
         });
+
 
         // ==========================================
         // UI & CONTROLS LOGIC
