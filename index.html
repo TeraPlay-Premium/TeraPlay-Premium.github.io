@@ -699,6 +699,48 @@
             .app-install-btn { padding: 8px 16px; font-size: 13px; }
             .app-ad-banner { padding: 12px; gap: 12px; }
         }
+        .controls-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 1;
+            min-width: 0;
+        }
+
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0; /* Yeh right side ke menu ko hilne ya dabne se bilkul rok dega */
+        }
+
+        .time-display {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            user-select: none;
+            min-width: 85px; 
+            /* Animation timing ko 'linear' me set kiya gaya hai */
+            transition: opacity 0.2s ease, max-width 0.2s linear, min-width 0.2s linear, margin 0.2s linear;
+            max-width: 150px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 0;
+            height: 20px; 
+            background: transparent;
+            outline: none;
+            cursor: pointer;
+            /* Yahan bhi timing 'linear' kardi hai taaki time-display ke sath perfectly match ho */
+            transition: width 0.2s linear, opacity 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
 
     </style>
 </head>
