@@ -1184,17 +1184,22 @@
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
-        function togglePlay() {
-            if (!isVideoLoaded || isAdRunning) return; 
+                function togglePlay() {
+            // 🔥 FIX: Agar video load nahi hui aur ad bhi nahi chal rahi, tabhi return karo
+            if (!isVideoLoaded && !isAdRunning) return; 
+
             if (video.paused) {
                 video.play().catch(e => {
                     errorMessage.style.display = 'block';
                     errorMessage.textContent = 'Playback error: The link might be broken.';
                 });
             } else {
+                // 🔥 FIX: Agar ad chal rahi hai, toh user ko pause karne se roko
+                if (isAdRunning) return; 
                 video.pause();
             }
         }
+
 
         playBtn.addEventListener('click', togglePlay);
         
@@ -1244,8 +1249,17 @@
             }
         }
 
-        video.addEventListener('pointerup', (e) => {
-            if (isAdRunning || !isVideoLoaded) return;
+                video.addEventListener('pointerup', (e) => {
+            if (!isVideoLoaded && !isAdRunning) return;
+
+            // 🔥 FIX: Agar ad ruki hui hai, toh click par play hone do. Baaki sab block!
+            if (isAdRunning) {
+                if (video.paused) {
+                    togglePlay();
+                }
+                return;
+            }
+
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
 
@@ -1255,16 +1269,12 @@
                 const x = e.clientX - rect.left;
                 
                 if (x < rect.width * 0.40) {
-                    // Left 40% area (Rewind)
                     video.currentTime = Math.max(0, video.currentTime - 5);
                     showSkipBadge('left');
                 } else if (x > rect.width * 0.60) {
-                    // Right 40% area (Forward)
                     video.currentTime = Math.min(video.duration, video.currentTime + 5);
                     showSkipBadge('right');
                 } else {
-                    // Center 20% area (No skip)
-                    // Double tapping here will toggle play/pause
                     togglePlay(); 
                 }
 
